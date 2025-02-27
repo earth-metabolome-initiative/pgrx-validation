@@ -7,11 +7,34 @@ The ordering of items is not stable, it is driven by a dependency graph.
 /* </end connected objects> */
 
 /* <begin connected objects> */
--- src/lib.rs:5
+-- src/lib.rs:24
 -- pgrx_validation::hello_pgrx_validation
 CREATE  FUNCTION "hello_pgrx_validation"() RETURNS TEXT /* &str */
 STRICT
 LANGUAGE c /* Rust */
 AS 'MODULE_PATHNAME', 'hello_pgrx_validation_wrapper';
+/* </end connected objects> */
+
+/* <begin connected objects> */
+-- src/lib.rs:29
+-- pgrx_validation::strictly_positive
+CREATE  FUNCTION "strictly_positive"(
+	"a" INT /* i32 */
+) RETURNS bool /* bool */
+STRICT
+LANGUAGE c /* Rust */
+AS 'MODULE_PATHNAME', 'strictly_positive_wrapper';
+/* </end connected objects> */
+
+/* <begin connected objects> */
+-- src/lib.rs:34
+-- pgrx_validation::x_must_be_bigger_than_y
+CREATE  FUNCTION "x_must_be_bigger_than_y"(
+	"x" INT, /* i32 */
+	"y" INT /* i32 */
+) RETURNS bool /* bool */
+STRICT
+LANGUAGE c /* Rust */
+AS 'MODULE_PATHNAME', 'x_must_be_bigger_than_y_wrapper';
 /* </end connected objects> */
 

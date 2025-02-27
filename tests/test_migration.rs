@@ -1,4 +1,4 @@
-use diesel::{Connection, PgConnection};
+use diesel::{connection::SimpleConnection, Connection, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::process::Command;
 use testcontainers::{
@@ -117,5 +117,15 @@ async fn connection_and_run_migrations() {
     let mut conn = establish_connection_to_postgres().expect("Failed to establish connection");
     conn.run_pending_migrations(DEFAULT_MIGRATIONS)
         .expect("Failed to run migrations");
+    conn.batch_execute("INSERT INTO price (value) VALUES (1);")
+        .expect("Failed to insert value : 1.");
+    conn.batch_execute("INSERT INTO price (value) VALUES (-1);")
+        .expect_err("Insertion of value should have failed.");
+
+    conn.batch_execute("INSERT INTO position (x,y) VALUES (3,2)")
+        .expect("Failed to insert value");
+    conn.batch_execute("INSERT INTO position (x,y) VALUES (2,3)")
+        .expect_err("Insertion should have failed");
+
     container.stop().await.expect("Failed to stop container");
 }
