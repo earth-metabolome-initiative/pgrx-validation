@@ -1,5 +1,6 @@
 use diesel::{connection::SimpleConnection, Connection, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use std::path::Path;
 use std::process::Command;
 use testcontainers::{
     core::{IntoContainerPort, WaitFor},
@@ -34,38 +35,6 @@ pub fn establish_connection_to_postgres() -> Result<PgConnection, diesel::Connec
     PgConnection::establish(&database_url)
 }
 
-/// Copy a file to a docker container.
-///
-/// # Arguments
-///
-/// * `container_id` - The ID of the container.
-/// * `local_path` - The path to the file on the local machine.
-/// * `container_path` - The path to the file in the container.
-///
-async fn copy_file_to_container(container_id: &str, local_path: &str, container_path: &str) {
-    // Checks whether the file exists on the local machine.
-    if !std::path::Path::new(local_path).exists() {
-        eprintln!("File does not exist: {}", local_path);
-        std::process::exit(1);
-    }
-
-    let output = Command::new("docker")
-        .args([
-            "cp",
-            local_path,
-            &format!("{}:{}", container_id, container_path),
-        ])
-        .output()
-        .expect("Failed to execute docker cp");
-
-    if !output.status.success() {
-        eprintln!(
-            "Error copying file: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-}
-
 /// Setup a docker container with a postgres database.
 ///
 /// # Panics
@@ -83,30 +52,25 @@ pub async fn setup_docker() -> ContainerAsync<GenericImage> {
         .with_env_var("POSTGRES_PASSWORD", DATABASE_PASSWORD)
         .with_env_var("POSTGRES_DB", DATABASE_NAME)
         .with_mapped_port(DATABASE_PORT, 5432_u16.tcp())
+        .with_copy_to(
+            "/usr/share/postgresql/17/extension/pgrx_validation.control",
+            Path::new(
+                "./my_own_extension/usr/share/postgresql/17/extension/pgrx_validation.control",
+            ),
+        )
+        .with_copy_to(
+            "/usr/share/postgresql/17/extension/pgrx_validation--0.0.0.sql",
+            Path::new(
+                "./my_own_extension/usr/share/postgresql/17/extension/pgrx_validation--0.0.0.sql",
+            ),
+        )
+        .with_copy_to(
+            "/usr/lib/postgresql/17/lib/pgrx_validation.so",
+            Path::new("./my_own_extension/usr/lib/postgresql/17/lib/pgrx_validation.so"),
+        )
         .start()
         .await
         .expect("Failed to start container");
-
-    let container_id = container.id(); // Get the container ID
-
-    copy_file_to_container(
-        container_id,
-        "./my_own_extension/usr/share/postgresql/17/extension/pgrx_validation.control",
-        "/usr/share/postgresql/17/extension/",
-    )
-    .await;
-    copy_file_to_container(
-        container_id,
-        "./my_own_extension/usr/share/postgresql/17/extension/pgrx_validation--0.0.0.sql",
-        "/usr/share/postgresql/17/extension/",
-    )
-    .await;
-    copy_file_to_container(
-        container_id,
-        "./my_own_extension/usr/lib/postgresql/17/lib/pgrx_validation.so",
-        "/usr/lib/postgresql/17/lib/",
-    )
-    .await;
 
     container
 }

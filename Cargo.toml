@@ -30,10 +30,10 @@ diesel = { version = "2.2.7", features = [
     "extras",
 ] }
 diesel_migrations = "2.2.0"
-pgrx = "=0.12.9"
+pgrx = "=0.13"
 
 [dev-dependencies]
-pgrx-tests = "=0.12.9"
+pgrx-tests = "=0.13"
 testcontainers = {version="0.23.2"}
 tokio = {version ="1.43.0", features = ["full"]}
 
